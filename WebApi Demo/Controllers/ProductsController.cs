@@ -1,35 +1,127 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
+using System.Web.Http.Description;
 using WebApi_Demo.Models;
 
 namespace WebApi_Demo.Controllers
 {
     public class ProductsController : ApiController
     {
-        private Product[] products = new Product[]
-        {
-            new Product {Id = 1, Name = "Honda Mobilio", Category = "Car", Price = 200},
-            new Product {Id = 2, Name = "Honda Supra X", Category = "Motorcycle", Price = 15},
-            new Product {Id = 3, Name = "Toyota CHR", Category = "Car", Price = 359},
-        };
+        private IWebApi_DemoContext db = new WebApi_DemoContext();
 
-        public IEnumerable<Product> GetAllProducts()
+        public ProductsController()
         {
-            return products;
         }
+
+        public ProductsController(IWebApi_DemoContext context)
+        {
+            db = context;
+        }
+
+        // GET: api/Products
+        public IQueryable<Product> GetProducts()
+        {
+            return db.Products;
+        }
+
+        // GET: api/Products/5
+        [ResponseType(typeof(Product))]
         public IHttpActionResult GetProduct(int id)
         {
-            var product = products.FirstOrDefault((p) => p.Id == id);
+            Product product = db.Products.Find(id);
             if (product == null)
             {
-                return Redirect("http://google.co.id");
+                return NotFound();
             }
+
             return Ok(product);
         }
 
+        // PUT: api/Products/5
+        [ResponseType(typeof(void))]
+        public IHttpActionResult PutProduct(int id, Product product)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (id != product.Id)
+            {
+                return BadRequest();
+            }
+
+            db.MarkAsModified(product);
+
+            try
+            {
+                db.SaveChanges();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ProductExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return StatusCode(HttpStatusCode.NoContent);
+        }
+
+        // POST: api/Products
+        [ResponseType(typeof(Product))]
+        public IHttpActionResult PostProduct(Product product)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            db.Products.Add(product);
+            db.SaveChanges();
+
+            return CreatedAtRoute("DefaultApi", new { id = product.Id }, product);
+        }
+
+        // DELETE: api/Products/5
+        [ResponseType(typeof(Product))]
+        public IHttpActionResult DeleteProduct(int id)
+        {
+            Product product = db.Products.Find(id);
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            db.Products.Remove(product);
+            db.SaveChanges();
+
+            return Ok(product);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                db.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        private bool ProductExists(int id)
+        {
+            return db.Products.Count(e => e.Id == id) > 0;
+        }
     }
 }
