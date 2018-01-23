@@ -1,2 +1,2 @@
 language: csharp
-solution: "WebApi Demo.sln"
+solution: WebApi_Demo.sln
