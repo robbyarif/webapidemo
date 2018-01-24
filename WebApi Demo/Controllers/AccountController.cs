@@ -96,6 +96,8 @@ namespace WebApi_Demo.Controllers
                 });
             }
 
+            // test comment
+
             if (user.PasswordHash != null)
             {
                 logins.Add(new UserLoginInfoViewModel
